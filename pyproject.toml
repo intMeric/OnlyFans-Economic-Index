@@ -19,8 +19,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
-# Dépendances de production (pour l'instant vides)
-dependencies = []
+# Production dependencies
+dependencies = [
+    "httpx>=0.28.1",
+    "python-dotenv>=1.0.1",
+    "asyncpg>=0.29.0"
+]
 
 [project.optional-dependencies]
 dev = [
@@ -67,3 +71,10 @@ warn_unused_ignores = true
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-v --cov=src --cov-report=term-missing"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
+]
