@@ -22,8 +22,9 @@ classifiers = [
 # Production dependencies
 dependencies = [
     "httpx>=0.28.1",
-    "python-dotenv>=1.0.1",
-    "asyncpg>=0.29.0"
+    "asyncpg>=0.29.0",
+    "selenium>=4.0.0",
+    "webdriver-manager>=4.0.2"
 ]
 
 [project.optional-dependencies]
@@ -77,4 +78,5 @@ dev = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.2.1",
+    "ruff>=0.12.1",
 ]

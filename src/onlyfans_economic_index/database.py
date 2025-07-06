@@ -1,29 +1,34 @@
 """Database service for managing OnlyFans profile data."""
 
 import os
-import asyncio
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 import asyncpg
 from dotenv import load_dotenv
 
+from .database_interface import DatabaseInterface
 
-class DatabaseService:
+
+class SupabaseDatabase(DatabaseInterface):
     """Service for managing database operations with Supabase."""
-    
+
     def __init__(self):
         """Initialize database service with Supabase credentials."""
         load_dotenv()
         self.password = os.getenv("SUPA_BASE_PWD")
         self.project_id = os.getenv("SUPA_BASE_ID")
-        
+
         if not self.password or not self.project_id:
-            raise ValueError("SUPA_BASE_PWD and SUPA_BASE_ID must be set in environment")
-        
+            raise ValueError(
+                "SUPA_BASE_PWD and SUPA_BASE_ID must be set in environment"
+            )
+
         self.connection_string = (
-            f"postgresql://postgres:{self.password}@db.{self.project_id}.supabase.co:5432/postgres"
+            f"postgresql://postgres:{self.password}@db.{self.project_id}"
+            ".supabase.co:5432/postgres"
         )
-    
+
     async def create_profiles_table(self) -> None:
         """Create profiles table if it doesn't exist."""
         conn = await asyncpg.connect(self.connection_string)
@@ -42,8 +47,8 @@ class DatabaseService:
             """)
         finally:
             await conn.close()
-    
-    async def insert_profile(self, username: str, profile_data: Dict[str, Any]) -> None:
+
+    async def insert_profile(self, username: str, profile_data: dict[str, Any]) -> None:
         """Insert or update a profile in the database.
         
         Args:
@@ -62,8 +67,8 @@ class DatabaseService:
             """, username, profile_data, datetime.now())
         finally:
             await conn.close()
-    
-    async def get_profile(self, username: str) -> Optional[Dict[str, Any]]:
+
+    async def get_profile(self, username: str) -> dict[str, Any] | None:
         """Get a profile from the database.
         
         Args:
@@ -79,7 +84,7 @@ class DatabaseService:
                 FROM onlyfans_profiles
                 WHERE username = $1
             """, username)
-            
+
             if row:
                 return {
                     "username": row["username"],
@@ -90,8 +95,8 @@ class DatabaseService:
             return None
         finally:
             await conn.close()
-    
-    async def get_all_profiles(self) -> List[Dict[str, Any]]:
+
+    async def get_all_profiles(self) -> list[dict[str, Any]]:
         """Get all profiles from the database.
         
         Returns:
@@ -104,7 +109,7 @@ class DatabaseService:
                 FROM onlyfans_profiles
                 ORDER BY created_at DESC
             """)
-            
+
             return [
                 {
                     "username": row["username"],
@@ -116,7 +121,7 @@ class DatabaseService:
             ]
         finally:
             await conn.close()
-    
+
     async def test_connection(self) -> bool:
         """Test database connection.
         
@@ -130,3 +135,11 @@ class DatabaseService:
             return True
         except Exception:
             return False
+
+    async def close(self) -> None:
+        """Close database connection."""
+        pass
+
+
+# Backward compatibility alias
+DatabaseService = SupabaseDatabase
