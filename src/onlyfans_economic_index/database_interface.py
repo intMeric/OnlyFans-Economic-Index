@@ -21,6 +21,19 @@ class DatabaseInterface(ABC):
             profile_data: The profile data to store
         """
         pass
+    
+    @abstractmethod
+    async def insert_profile_snapshot(self, username: str, profile_data: dict[str, Any]) -> bool:
+        """Insert a new profile snapshot with timestamp if none exists for today.
+        
+        Args:
+            username: The profile username
+            profile_data: The profile data to store
+            
+        Returns:
+            True if snapshot was inserted, False if one already exists for today
+        """
+        pass
 
     @abstractmethod
     async def get_profile(self, username: str) -> dict[str, Any] | None:

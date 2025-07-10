@@ -42,8 +42,17 @@ class SupabaseDatabase(DatabaseInterface):
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                 );
                 
+                CREATE TABLE IF NOT EXISTS onlyfans_profiles_snapshots (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(255) NOT NULL,
+                    profile_data JSONB NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                );
+                
                 CREATE INDEX IF NOT EXISTS idx_profiles_username ON onlyfans_profiles(username);
                 CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON onlyfans_profiles(created_at);
+                CREATE INDEX IF NOT EXISTS idx_snapshots_username ON onlyfans_profiles_snapshots(username);
+                CREATE INDEX IF NOT EXISTS idx_snapshots_created_at ON onlyfans_profiles_snapshots(created_at);
             """)
         finally:
             await conn.close()
@@ -65,6 +74,41 @@ class SupabaseDatabase(DatabaseInterface):
                     profile_data = $2,
                     updated_at = $3
             """, username, profile_data, datetime.now())
+        finally:
+            await conn.close()
+
+    async def insert_profile_snapshot(self, username: str, profile_data: dict[str, Any]) -> bool:
+        """Insert a new profile snapshot with timestamp if none exists for today.
+        
+        Args:
+            username: The profile username
+            profile_data: The profile data from the API
+            
+        Returns:
+            True if snapshot was inserted, False if one already exists for today
+        """
+        conn = await asyncpg.connect(self.connection_string)
+        try:
+            now = datetime.now()
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+            
+            # Check if snapshot already exists for today
+            existing = await conn.fetchrow("""
+                SELECT id FROM onlyfans_profiles_snapshots 
+                WHERE username = $1 AND created_at >= $2 AND created_at <= $3
+            """, username, today_start, today_end)
+            
+            if existing:
+                return False
+            
+            # Insert new snapshot
+            await conn.execute("""
+                INSERT INTO onlyfans_profiles_snapshots (username, profile_data, created_at)
+                VALUES ($1, $2, $3)
+            """, username, profile_data, now)
+            
+            return True
         finally:
             await conn.close()
 

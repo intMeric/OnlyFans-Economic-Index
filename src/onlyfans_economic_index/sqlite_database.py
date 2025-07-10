@@ -42,10 +42,29 @@ class SQLiteDatabase(DatabaseInterface):
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS onlyfans_profiles_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                profile_data TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Create indexes
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_profiles_username 
             ON onlyfans_profiles(username)
+        """)
+        
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_snapshots_username 
+            ON onlyfans_profiles_snapshots(username)
+        """)
+        
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_snapshots_created_at 
+            ON onlyfans_profiles_snapshots(created_at)
         """)
 
         conn.execute("""
@@ -81,6 +100,44 @@ class SQLiteDatabase(DatabaseInterface):
         """, (username, json.dumps(profile_data), username, now, now))
 
         conn.commit()
+
+    async def insert_profile_snapshot(self, username: str, profile_data: dict[str, Any]) -> bool:
+        """Insert a new profile snapshot with timestamp if none exists for today.
+        
+        Args:
+            username: The profile username
+            profile_data: The profile data from the API
+            
+        Returns:
+            True if snapshot was inserted, False if one already exists for today
+        """
+        if profile_data is None:
+            raise ValueError("Profile data cannot be None")
+
+        conn = await self._get_connection()
+        now = datetime.now()
+        today_date = now.strftime('%Y-%m-%d')
+
+        # Check if snapshot already exists for today
+        cursor = conn.execute("""
+            SELECT id FROM onlyfans_profiles_snapshots 
+            WHERE username = ? AND DATE(created_at) = ?
+        """, (username, today_date))
+        
+        existing = cursor.fetchone()
+        
+        if existing:
+            return False
+
+        # Insert new snapshot
+        conn.execute("""
+            INSERT INTO onlyfans_profiles_snapshots 
+            (username, profile_data, created_at)
+            VALUES (?, ?, ?)
+        """, (username, json.dumps(profile_data), now.isoformat()))
+
+        conn.commit()
+        return True
 
     async def get_profile(self, username: str) -> dict[str, Any] | None:
         """Get a profile from the database.
