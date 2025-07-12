@@ -1,6 +1,5 @@
 """Service for OnlyFans API requests."""
 
-import json
 import time
 from typing import Any
 
@@ -13,7 +12,7 @@ from .mock_browser_service import MockOnlyFansBrowserService
 class OnlyFansAPIService:
     """
     Service for interacting with OnlyFans API.
-    
+
     WARNING: This class is provided for educational purposes only.
     Make sure to comply with OnlyFans terms of service and applicable laws.
     """
@@ -21,7 +20,7 @@ class OnlyFansAPIService:
     def __init__(self, user_agent: str = None, use_browser: bool = True, use_mock: bool = False):
         """
         Initialize the API service.
-        
+
         Args:
             user_agent: User-Agent to use for requests
             use_browser: Whether to use browser service for token management
@@ -65,7 +64,7 @@ class OnlyFansAPIService:
     async def get_init_config(self) -> dict[str, Any] | None:
         """
         Get initial configuration from texts.onlyfans.com/init.json
-        
+
         Returns:
             JSON configuration or None on error
         """
@@ -88,7 +87,7 @@ class OnlyFansAPIService:
     def get_init_config_sync(self) -> dict[str, Any] | None:
         """
         Synchronous version of get_init_config.
-        
+
         Returns:
             JSON configuration or None on error
         """
@@ -117,18 +116,19 @@ class OnlyFansAPIService:
     ) -> dict[str, str]:
         """
         Build authentication headers.
-        
+
         WARNING: This method is incomplete as OnlyFans exact signing
         algorithm is not public.
-        
+
         Args:
             method: HTTP method (GET, POST, etc.)
             path: API path
             body: Request body for POST/PUT
-            
+
         Returns:
             Authentication headers
         """
+        del method, path, body  # Unused parameters
         timestamp = self._generate_timestamp()
 
         auth_headers = {
@@ -149,10 +149,10 @@ class OnlyFansAPIService:
     async def get_profile_details(self, username: str) -> dict[str, Any] | None:
         """
         Get user profile details.
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             Profile data or None on error
         """
@@ -167,10 +167,10 @@ class OnlyFansAPIService:
     async def _get_profile_with_browser(self, username: str) -> dict[str, Any] | None:
         """
         Get profile details using browser service.
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             Profile data or None on error
         """
@@ -187,10 +187,10 @@ class OnlyFansAPIService:
     async def _get_profile_with_api(self, username: str) -> dict[str, Any] | None:
         """
         Get profile details using API (fallback method).
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             Profile data or None on error
         """
@@ -232,10 +232,10 @@ class OnlyFansAPIService:
     def get_profile_details_sync(self, username: str) -> dict[str, Any] | None:
         """
         Synchronous version of get_profile_details.
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             Profile data or None on error
         """
@@ -265,93 +265,14 @@ class OnlyFansAPIService:
             print(f"Request error: {e}")
             return None
 
-    async def send_stats(
-        self, model_id: int, event_time: str = None, duration: int = 0
-    ) -> bool:
-        """
-        Send statistics (based on stats-collect endpoint).
-        
-        Args:
-            model_id: Model ID
-            event_time: Event timestamp (ISO format)
-            duration: Duration in seconds
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            url = f"{self.api_base}/users/profile/stats-collect"
-
-            if not event_time:
-                event_time = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
-
-            payload = {
-                "modelId": model_id,
-                "eventTime": event_time,
-                "duration": duration
-            }
-
-            auth_headers = self._build_auth_headers(
-                "POST", "/api2/v2/users/profile/stats-collect", json.dumps(payload)
-            )
-
-            headers = {**self.default_headers, **auth_headers}
-
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=payload, headers=headers)
-                return response.status_code == 200
-
-        except httpx.RequestError as e:
-            print(f"Error sending stats: {e}")
-            return False
-
-    def send_stats_sync(
-        self, model_id: int, event_time: str = None, duration: int = 0
-    ) -> bool:
-        """
-        Synchronous version of send_stats.
-        
-        Args:
-            model_id: Model ID
-            event_time: Event timestamp (ISO format)
-            duration: Duration in seconds
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            url = f"{self.api_base}/users/profile/stats-collect"
-
-            if not event_time:
-                event_time = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
-
-            payload = {
-                "modelId": model_id,
-                "eventTime": event_time,
-                "duration": duration
-            }
-
-            auth_headers = self._build_auth_headers(
-                "POST", "/api2/v2/users/profile/stats-collect", json.dumps(payload)
-            )
-
-            headers = {**self.default_headers, **auth_headers}
-
-            with httpx.Client() as client:
-                response = client.post(url, json=payload, headers=headers)
-                return response.status_code == 200
-
-        except httpx.RequestError as e:
-            print(f"Error sending stats: {e}")
-            return False
 
     def set_authentication_tokens(self, x_bc: str, sign: str, x_hash: str):
         """
         Set authentication tokens.
-        
+
         These tokens must be obtained through legal authentication
         on the OnlyFans platform.
-        
+
         Args:
             x_bc: x-bc token
             sign: Signature
@@ -364,7 +285,7 @@ class OnlyFansAPIService:
     def _are_tokens_valid(self) -> bool:
         """
         Check if current tokens are valid.
-        
+
         Returns:
             True if tokens exist and are not empty, False otherwise
         """
@@ -374,7 +295,7 @@ class OnlyFansAPIService:
     def _refresh_tokens_from_browser(self) -> bool:
         """
         Refresh tokens using browser service.
-        
+
         Returns:
             True if tokens were refreshed successfully, False otherwise
         """
@@ -397,7 +318,7 @@ class OnlyFansAPIService:
     def start_browser_session(self) -> bool:
         """
         Start browser session for token management.
-        
+
         Returns:
             True if session started successfully, False otherwise
         """
@@ -419,6 +340,7 @@ class OnlyFansAPIService:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
+        del exc_type, exc_val, exc_tb  # Unused parameters
         if self.use_browser:
             self.close_browser_session()
 

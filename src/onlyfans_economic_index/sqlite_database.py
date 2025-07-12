@@ -3,7 +3,6 @@
 import json
 import sqlite3
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 from .database_interface import DatabaseInterface
@@ -14,7 +13,7 @@ class SQLiteDatabase(DatabaseInterface):
 
     def __init__(self, db_path: str = "onlyfans_profiles.db"):
         """Initialize SQLite database.
-        
+
         Args:
             db_path: Path to SQLite database file
         """
@@ -53,22 +52,22 @@ class SQLiteDatabase(DatabaseInterface):
 
         # Create indexes
         conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_profiles_username 
+            CREATE INDEX IF NOT EXISTS idx_profiles_username
             ON onlyfans_profiles(username)
         """)
-        
+
         conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_snapshots_username 
+            CREATE INDEX IF NOT EXISTS idx_snapshots_username
             ON onlyfans_profiles_snapshots(username)
         """)
-        
+
         conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_snapshots_created_at 
+            CREATE INDEX IF NOT EXISTS idx_snapshots_created_at
             ON onlyfans_profiles_snapshots(created_at)
         """)
 
         conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_profiles_created_at 
+            CREATE INDEX IF NOT EXISTS idx_profiles_created_at
             ON onlyfans_profiles(created_at)
         """)
 
@@ -76,7 +75,7 @@ class SQLiteDatabase(DatabaseInterface):
 
     async def insert_profile(self, username: str, profile_data: dict[str, Any]) -> None:
         """Insert or update a profile in the database.
-        
+
         Args:
             username: The profile username
             profile_data: The profile data to store
@@ -88,13 +87,13 @@ class SQLiteDatabase(DatabaseInterface):
         now = datetime.now().isoformat()
 
         conn.execute("""
-            INSERT OR REPLACE INTO onlyfans_profiles 
+            INSERT OR REPLACE INTO onlyfans_profiles
             (username, profile_data, created_at, updated_at)
-            VALUES (?, ?, 
+            VALUES (?, ?,
                 COALESCE(
-                    (SELECT created_at FROM onlyfans_profiles WHERE username = ?), 
+                    (SELECT created_at FROM onlyfans_profiles WHERE username = ?),
                     ?
-                ), 
+                ),
                 ?
             )
         """, (username, json.dumps(profile_data), username, now, now))
@@ -103,11 +102,11 @@ class SQLiteDatabase(DatabaseInterface):
 
     async def insert_profile_snapshot(self, username: str, profile_data: dict[str, Any]) -> bool:
         """Insert a new profile snapshot with timestamp if none exists for today.
-        
+
         Args:
             username: The profile username
             profile_data: The profile data from the API
-            
+
         Returns:
             True if snapshot was inserted, False if one already exists for today
         """
@@ -120,18 +119,18 @@ class SQLiteDatabase(DatabaseInterface):
 
         # Check if snapshot already exists for today
         cursor = conn.execute("""
-            SELECT id FROM onlyfans_profiles_snapshots 
+            SELECT id FROM onlyfans_profiles_snapshots
             WHERE username = ? AND DATE(created_at) = ?
         """, (username, today_date))
-        
+
         existing = cursor.fetchone()
-        
+
         if existing:
             return False
 
         # Insert new snapshot
         conn.execute("""
-            INSERT INTO onlyfans_profiles_snapshots 
+            INSERT INTO onlyfans_profiles_snapshots
             (username, profile_data, created_at)
             VALUES (?, ?, ?)
         """, (username, json.dumps(profile_data), now.isoformat()))
@@ -141,10 +140,10 @@ class SQLiteDatabase(DatabaseInterface):
 
     async def get_profile(self, username: str) -> dict[str, Any] | None:
         """Get a profile from the database.
-        
+
         Args:
             username: The profile username
-            
+
         Returns:
             Profile data if found, None otherwise
         """
@@ -152,7 +151,7 @@ class SQLiteDatabase(DatabaseInterface):
 
         cursor = conn.execute("""
             SELECT username, profile_data, created_at, updated_at
-            FROM onlyfans_profiles 
+            FROM onlyfans_profiles
             WHERE username = ?
         """, (username,))
 
@@ -168,7 +167,7 @@ class SQLiteDatabase(DatabaseInterface):
 
     async def get_all_profiles(self) -> list[dict[str, Any]]:
         """Get all profiles from the database.
-        
+
         Returns:
             List of all profiles
         """
@@ -176,7 +175,7 @@ class SQLiteDatabase(DatabaseInterface):
 
         cursor = conn.execute("""
             SELECT username, profile_data, created_at, updated_at
-            FROM onlyfans_profiles 
+            FROM onlyfans_profiles
             ORDER BY created_at DESC
         """)
 
@@ -193,17 +192,17 @@ class SQLiteDatabase(DatabaseInterface):
 
     async def delete_profile(self, username: str) -> bool:
         """Delete a profile from the database.
-        
+
         Args:
             username: The username to delete
-            
+
         Returns:
             True if deleted, False if not found
         """
         conn = await self._get_connection()
 
         cursor = conn.execute("""
-            DELETE FROM onlyfans_profiles 
+            DELETE FROM onlyfans_profiles
             WHERE username = ?
         """, (username,))
 
@@ -212,7 +211,7 @@ class SQLiteDatabase(DatabaseInterface):
 
     async def test_connection(self) -> bool:
         """Test database connection.
-        
+
         Returns:
             True if connection successful, False otherwise
         """
@@ -229,24 +228,3 @@ class SQLiteDatabase(DatabaseInterface):
             self.connection.close()
             self.connection = None
 
-    def get_stats(self) -> dict[str, Any]:
-        """Get database statistics.
-        
-        Returns:
-            Database statistics
-        """
-        if not Path(self.db_path).exists():
-            return {"total_profiles": 0, "database_size": 0}
-
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.execute("SELECT COUNT(*) as count FROM onlyfans_profiles")
-        total_profiles = cursor.fetchone()[0]
-
-        database_size = Path(self.db_path).stat().st_size
-        conn.close()
-
-        return {
-            "total_profiles": total_profiles,
-            "database_size": database_size,
-            "database_path": str(Path(self.db_path).absolute())
-        }

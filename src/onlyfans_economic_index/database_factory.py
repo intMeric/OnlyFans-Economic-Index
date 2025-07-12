@@ -12,15 +12,15 @@ def create_database(
     db_type: Literal["sqlite", "supabase"] = None, **kwargs
 ) -> DatabaseInterface:
     """Create a database instance based on configuration.
-    
+
     Args:
         db_type: Type of database to create. If None, will use DB_TYPE env var
                 or default to 'sqlite' for development
         **kwargs: Additional arguments passed to database constructor
-        
+
     Returns:
         Database instance implementing DatabaseInterface
-        
+
     Raises:
         ValueError: If invalid database type specified
     """
@@ -38,7 +38,7 @@ def create_database(
 
 def get_database() -> DatabaseInterface:
     """Get the default database instance based on environment configuration.
-    
+
     Returns:
         Configured database instance
     """

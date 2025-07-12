@@ -66,22 +66,22 @@ class TestOnlyFansAPIService:
             headers={"origin": "https://onlyfans.com", "referer": "https://onlyfans.com/"},
         )
 
-    @patch("httpx.AsyncClient")
-    async def test_get_profile_details_success(self, mock_client):
-        """Test successful profile details retrieval."""
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"id": 123, "username": "testuser"}
-
-        mock_client_instance = AsyncMock()
-        mock_client_instance.get.return_value = mock_response
-        mock_client.return_value.__aenter__.return_value = mock_client_instance
-
-        service = OnlyFansAPIService()
+    async def test_get_profile_details_success(self):
+        """Test successful profile details retrieval with mock browser."""
+        service = OnlyFansAPIService(use_browser=True, use_mock=True)
+        service.start_browser_session()  # Start the session explicitly
         result = await service.get_profile_details("testuser")
 
-        assert result == {"id": 123, "username": "testuser"}
-        mock_client_instance.get.assert_called_once()
+        expected_format = {
+            "username": "testuser",
+            "name": "Test User",
+            "followers": "1K",
+            "posts": "10",
+            "bio": "Test profile",
+            "avatar": "https://example.com/test.jpg",
+            "is_verified": False
+        }
+        assert result == expected_format
 
     async def test_get_profile_details_empty_username(self):
         """Test profile details with empty username."""

@@ -20,7 +20,7 @@ class OnlyFansBrowserService:
     def __init__(self, headless: bool = True):
         """
         Initialize the browser service.
-        
+
         Args:
             headless: Whether to run browser in headless mode
         """
@@ -74,7 +74,8 @@ class OnlyFansBrowserService:
 
         try:
             driver = webdriver.Chrome(service=service, options=options)
-            script = "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+            script = ("Object.defineProperty(navigator, 'webdriver', "
+                     "{get: () => undefined})")
             driver.execute_script(script)
             return driver
         except Exception as e:
@@ -82,7 +83,8 @@ class OnlyFansBrowserService:
             try:
                 options.binary_location = "/snap/bin/chromium"
                 driver = webdriver.Chrome(service=service, options=options)
-                script = "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+                script = ("Object.defineProperty(navigator, 'webdriver', "
+                     "{get: () => undefined})")
                 driver.execute_script(script)
                 return driver
             except Exception as e2:
@@ -94,7 +96,8 @@ class OnlyFansBrowserService:
                     )
                     options.binary_location = flatpak_path
                     driver = webdriver.Chrome(service=service, options=options)
-                    script = "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+                    script = ("Object.defineProperty(navigator, 'webdriver', "
+                     "{get: () => undefined})")
                     driver.execute_script(script)
                     return driver
                 except Exception as e3:
@@ -104,7 +107,7 @@ class OnlyFansBrowserService:
     def start_session(self) -> bool:
         """
         Start browser session.
-        
+
         Returns:
             True if successful, False otherwise
         """
@@ -117,7 +120,8 @@ class OnlyFansBrowserService:
                 try:
                     self.driver.execute_cdp_cmd('Network.enable', {})
                     self.driver.execute_cdp_cmd('Runtime.enable', {})
-                    print("✓ Network and Runtime domains enabled for request interception")
+                    print("✓ Network and Runtime domains enabled for request "
+                         "interception")
                 except Exception as e:
                     print(f"Warning: Could not enable CDP domains: {e}")
 
@@ -137,7 +141,7 @@ class OnlyFansBrowserService:
     def _extract_tokens_from_network(self) -> dict[str, str]:
         """
         Extract authentication tokens from network requests.
-        
+
         Returns:
             Dictionary containing tokens
         """
@@ -179,10 +183,10 @@ class OnlyFansBrowserService:
     def navigate_to_profile(self, username: str) -> bool:
         """
         Navigate to user profile page.
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -209,10 +213,10 @@ class OnlyFansBrowserService:
     def get_profile_data(self, username: str) -> dict[str, Any] | None:
         """
         Get profile data by navigating to profile page and intercepting API calls.
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             Profile data or None if failed
         """
@@ -234,10 +238,10 @@ class OnlyFansBrowserService:
     def _setup_and_capture_api(self, username: str) -> dict[str, Any] | None:
         """
         Set up network interception and navigate to capture API response.
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             API response data or None if not captured
         """
@@ -261,10 +265,10 @@ class OnlyFansBrowserService:
     def _wait_for_api_request(self, username: str) -> dict[str, Any] | None:
         """
         Actively wait for the specific API request to appear in logs.
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             API response data or None if not found
         """
@@ -306,12 +310,12 @@ class OnlyFansBrowserService:
     def _search_logs_for_api_response(self, logs: list, username: str, target_pattern: str) -> dict[str, Any] | None:
         """
         Search through performance logs for the target API response.
-        
+
         Args:
             logs: Performance logs to search
             username: Username to look for
             target_pattern: URL pattern to match
-            
+
         Returns:
             API response data or None if not found
         """
@@ -378,144 +382,15 @@ class OnlyFansBrowserService:
             print(f"❌ Error searching logs: {e}")
             return None
 
-    def _try_direct_api_call(self, username: str) -> dict[str, Any] | None:
-        """
-        Try to make a direct API call using the browser's network context.
-        
-        Args:
-            username: OnlyFans username
-            
-        Returns:
-            API response data or None if failed
-        """
-        try:
-            print(f"🚀 Attempting direct API call for {username}")
-
-            # First navigate to the main page to establish session
-            self.driver.get("https://onlyfans.com")
-            time.sleep(2)
-
-            # Try to execute a fetch request from within the browser context
-            api_url = f"https://onlyfans.com/api2/v2/users/{username}"
-
-            script = f"""
-                var callback = arguments[arguments.length - 1];
-                
-                fetch('{api_url}', {{
-                    method: 'GET',
-                    headers: {{
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }},
-                    credentials: 'include'
-                }})
-                .then(response => response.json())
-                .then(data => callback(data))
-                .catch(error => callback(null));
-            """
-
-            result = self.driver.execute_async_script(script)
-
-            if result and isinstance(result, dict) and result.get('username') == username:
-                print(f"✅ Direct API call successful for {username}")
-                return result
-            else:
-                print(f"❌ Direct API call failed for {username}")
-                return None
-
-        except Exception as e:
-            print(f"❌ Error in direct API call: {e}")
-            return None
-
-
-    def _capture_api_request(self, username: str) -> dict[str, Any] | None:
-        """
-        Capture the specific API request for user data using CDP.
-        
-        Args:
-            username: OnlyFans username
-            
-        Returns:
-            API response data or None if not captured
-        """
-        try:
-            target_url = f"https://onlyfans.com/api2/v2/users/{username}"
-            print(f"🎯 Looking for API request: {target_url}")
-
-            # Set up response interception
-            captured_data = None
-
-            # Enable request interception
-            self.driver.execute_cdp_cmd('Network.setRequestInterception', {
-                'patterns': [{'urlPattern': f'*api2/v2/users/{username}*'}]
-            })
-
-            # Wait and monitor network requests
-            start_time = time.time()
-            timeout = 10  # 10 seconds timeout
-
-            while time.time() - start_time < timeout:
-                try:
-                    # Get network events
-                    events = self.driver.get_log('performance')
-
-                    for event in events:
-                        message = json.loads(event['message'])
-
-                        if message.get('method') == 'Network.responseReceived':
-                            response = message.get('params', {}).get('response', {})
-                            url = response.get('url', '')
-                            status = response.get('status')
-
-                            # Check if this is our target API endpoint
-                            if f'api2/v2/users/{username}' in url and status == 200:
-                                print(f"🎯 Found target API request: {url}")
-
-                                # Get the request ID to fetch response body
-                                request_id = message.get('params', {}).get('requestId')
-                                if request_id:
-                                    try:
-                                        # Fetch the response body
-                                        response_body = self.driver.execute_cdp_cmd('Network.getResponseBody', {
-                                            'requestId': request_id
-                                        })
-
-                                        if response_body and 'body' in response_body:
-                                            body_text = response_body['body']
-                                            if response_body.get('base64Encoded'):
-                                                import base64
-                                                body_text = base64.b64decode(body_text).decode('utf-8')
-
-                                            # Parse the JSON response
-                                            captured_data = json.loads(body_text)
-                                            print(f"✅ Successfully captured API response for {username}")
-                                            return captured_data
-
-                                    except Exception as e:
-                                        print(f"❌ Error fetching response body: {e}")
-                                        continue
-
-                except Exception as e:
-                    print(f"⚠ Error processing network events: {e}")
-
-                # Small delay before checking again
-                time.sleep(0.5)
-
-            print(f"⏰ Timeout waiting for API request: {target_url}")
-            return None
-
-        except Exception as e:
-            print(f"❌ Error setting up request capture: {e}")
-            return None
 
     def _format_api_data(self, api_data: dict, username: str) -> dict[str, Any]:
         """
         Format API response data into our standard format.
-        
+
         Args:
             api_data: Raw API response data
             username: Username
-            
+
         Returns:
             Formatted profile data
         """
@@ -556,10 +431,10 @@ class OnlyFansBrowserService:
     def _extract_dom_data(self, username: str) -> dict[str, Any] | None:
         """
         Extract profile data from DOM elements (fallback method).
-        
+
         Args:
             username: OnlyFans username
-            
+
         Returns:
             Profile data from DOM or None if failed
         """
@@ -685,11 +560,11 @@ class OnlyFansBrowserService:
     def _extract_json_from_source(self, page_source: str, username: str) -> dict[str, Any] | None:
         """
         Extract JSON data from page source.
-        
+
         Args:
             page_source: HTML source of the page
             username: Username to look for
-            
+
         Returns:
             JSON data if found, None otherwise
         """
@@ -748,11 +623,11 @@ class OnlyFansBrowserService:
     def _find_user_data(self, data: dict, username: str) -> dict[str, Any] | None:
         """
         Recursively search for user data in a nested dictionary.
-        
+
         Args:
             data: Dictionary to search
             username: Username to look for
-            
+
         Returns:
             User data if found, None otherwise
         """
@@ -781,32 +656,11 @@ class OnlyFansBrowserService:
             print(f"Error searching user data: {e}")
             return None
 
-    def _check_verification_status(self) -> bool:
-        """
-        Check if profile is verified (legacy method).
-        
-        Returns:
-            True if verified, False otherwise
-        """
-        verification_selectors = [
-            '.verified-badge',
-            '.m-verified',
-            '[data-testid="verified-badge"]',
-            '.icon-verified'
-        ]
-
-        for selector in verification_selectors:
-            try:
-                self.driver.find_element(By.CSS_SELECTOR, selector)
-                return True
-            except:
-                continue
-        return False
 
     def get_tokens(self) -> dict[str, str]:
         """
         Get current authentication tokens.
-        
+
         Returns:
             Dictionary containing tokens
         """
@@ -815,7 +669,7 @@ class OnlyFansBrowserService:
     def refresh_tokens(self) -> bool:
         """
         Refresh authentication tokens by navigating to OnlyFans.
-        
+
         Returns:
             True if tokens were refreshed, False otherwise
         """
@@ -846,7 +700,7 @@ class OnlyFansBrowserService:
     def are_tokens_valid(self) -> bool:
         """
         Check if current tokens are valid.
-        
+
         Returns:
             True if tokens exist and are not empty, False otherwise
         """
@@ -860,4 +714,5 @@ class OnlyFansBrowserService:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
+        del exc_type, exc_val, exc_tb  # Unused parameters
         self.close_session()
