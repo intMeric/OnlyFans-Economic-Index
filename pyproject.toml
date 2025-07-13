@@ -44,12 +44,12 @@ oei = "onlyfans_economic_index.main:main"
 
 # Configuration des outils
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ['py312']
 
 [tool.ruff]
 target-version = "py312"
-line-length = 88
+line-length = 120
 
 [tool.ruff.lint]
 select = [

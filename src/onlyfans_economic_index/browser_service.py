@@ -665,14 +665,14 @@ class OnlyFansBrowserService:
 
             # Search in nested dictionaries and lists
             if isinstance(data, dict):
-                for key, value in data.items():
-                    if isinstance(value, (dict, list)):
+                for _key, value in data.items():
+                    if isinstance(value, dict | list):
                         result = self._find_user_data(value, username)
                         if result:
                             return result
             elif isinstance(data, list):
                 for item in data:
-                    if isinstance(item, (dict, list)):
+                    if isinstance(item, dict | list):
                         result = self._find_user_data(item, username)
                         if result:
                             return result
