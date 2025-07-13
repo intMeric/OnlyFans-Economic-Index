@@ -4,9 +4,9 @@ import argparse
 import asyncio
 
 from .browser_service import OnlyFansBrowserService
-from .supa_database import SupabaseDatabase
 from .mock_browser_service import MockOnlyFansBrowserService
 from .sqlite_database import SQLiteDatabase
+from .supa_database import SupabaseDatabase
 
 
 async def test_api_client() -> None:

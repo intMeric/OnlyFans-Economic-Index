@@ -34,14 +34,6 @@ class SupabaseDatabase(DatabaseInterface):
         conn = await asyncpg.connect(self.connection_string)
         try:
             await conn.execute("""
-                CREATE TABLE IF NOT EXISTS onlyfans_profiles (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(255) UNIQUE NOT NULL,
-                    profile_data JSONB NOT NULL,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-                );
-
                 CREATE TABLE IF NOT EXISTS onlyfans_profiles_snapshots (
                     id SERIAL PRIMARY KEY,
                     username VARCHAR(255) NOT NULL,
@@ -49,35 +41,18 @@ class SupabaseDatabase(DatabaseInterface):
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                 );
 
-                CREATE INDEX IF NOT EXISTS idx_profiles_username ON onlyfans_profiles(username);
-                CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON onlyfans_profiles(created_at);
-                CREATE INDEX IF NOT EXISTS idx_snapshots_username ON onlyfans_profiles_snapshots(username);
-                CREATE INDEX IF NOT EXISTS idx_snapshots_created_at ON onlyfans_profiles_snapshots(created_at);
+                CREATE INDEX IF NOT EXISTS idx_snapshots_username
+                ON onlyfans_profiles_snapshots(username);
+                CREATE INDEX IF NOT EXISTS idx_snapshots_created_at
+                ON onlyfans_profiles_snapshots(created_at);
             """)
         finally:
             await conn.close()
 
-    async def insert_profile(self, username: str, profile_data: dict[str, Any]) -> None:
-        """Insert or update a profile in the database.
 
-        Args:
-            username: The profile username
-            profile_data: The profile data from the API
-        """
-        conn = await asyncpg.connect(self.connection_string)
-        try:
-            await conn.execute("""
-                INSERT INTO onlyfans_profiles (username, profile_data, created_at, updated_at)
-                VALUES ($1, $2, $3, $3)
-                ON CONFLICT (username)
-                DO UPDATE SET
-                    profile_data = $2,
-                    updated_at = $3
-            """, username, profile_data, datetime.now())
-        finally:
-            await conn.close()
-
-    async def insert_profile_snapshot(self, username: str, profile_data: dict[str, Any]) -> bool:
+    async def insert_profile_snapshot(
+        self, username: str, profile_data: dict[str, Any]
+    ) -> bool:
         """Insert a new profile snapshot with timestamp if none exists for today.
 
         Args:
@@ -104,7 +79,8 @@ class SupabaseDatabase(DatabaseInterface):
 
             # Insert new snapshot
             await conn.execute("""
-                INSERT INTO onlyfans_profiles_snapshots (username, profile_data, created_at)
+                INSERT INTO onlyfans_profiles_snapshots
+                (username, profile_data, created_at)
                 VALUES ($1, $2, $3)
             """, username, profile_data, now)
 
@@ -112,59 +88,7 @@ class SupabaseDatabase(DatabaseInterface):
         finally:
             await conn.close()
 
-    async def get_profile(self, username: str) -> dict[str, Any] | None:
-        """Get a profile from the database.
 
-        Args:
-            username: The profile username
-
-        Returns:
-            Profile data if found, None otherwise
-        """
-        conn = await asyncpg.connect(self.connection_string)
-        try:
-            row = await conn.fetchrow("""
-                SELECT username, profile_data, created_at, updated_at
-                FROM onlyfans_profiles
-                WHERE username = $1
-            """, username)
-
-            if row:
-                return {
-                    "username": row["username"],
-                    "profile_data": row["profile_data"],
-                    "created_at": row["created_at"],
-                    "updated_at": row["updated_at"]
-                }
-            return None
-        finally:
-            await conn.close()
-
-    async def get_all_profiles(self) -> list[dict[str, Any]]:
-        """Get all profiles from the database.
-
-        Returns:
-            List of all profiles
-        """
-        conn = await asyncpg.connect(self.connection_string)
-        try:
-            rows = await conn.fetch("""
-                SELECT username, profile_data, created_at, updated_at
-                FROM onlyfans_profiles
-                ORDER BY created_at DESC
-            """)
-
-            return [
-                {
-                    "username": row["username"],
-                    "profile_data": row["profile_data"],
-                    "created_at": row["created_at"],
-                    "updated_at": row["updated_at"]
-                }
-                for row in rows
-            ]
-        finally:
-            await conn.close()
 
     async def test_connection(self) -> bool:
         """Test database connection.

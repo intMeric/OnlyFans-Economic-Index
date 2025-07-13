@@ -12,18 +12,11 @@ class DatabaseInterface(ABC):
         """Create profiles table if it doesn't exist."""
         pass
 
-    @abstractmethod
-    async def insert_profile(self, username: str, profile_data: dict[str, Any]) -> None:
-        """Insert or update a profile in the database.
-
-        Args:
-            username: The profile username
-            profile_data: The profile data to store
-        """
-        pass
 
     @abstractmethod
-    async def insert_profile_snapshot(self, username: str, profile_data: dict[str, Any]) -> bool:
+    async def insert_profile_snapshot(
+        self, username: str, profile_data: dict[str, Any]
+    ) -> bool:
         """Insert a new profile snapshot with timestamp if none exists for today.
 
         Args:
@@ -35,38 +28,8 @@ class DatabaseInterface(ABC):
         """
         pass
 
-    @abstractmethod
-    async def get_profile(self, username: str) -> dict[str, Any] | None:
-        """Get a profile from the database.
 
-        Args:
-            username: The profile username
 
-        Returns:
-            Profile data if found, None otherwise
-        """
-        pass
-
-    @abstractmethod
-    async def get_all_profiles(self) -> list[dict[str, Any]]:
-        """Get all profiles from the database.
-
-        Returns:
-            List of all profiles
-        """
-        pass
-
-    @abstractmethod
-    async def delete_profile(self, username: str) -> bool:
-        """Delete a profile from the database.
-
-        Args:
-            username: The username to delete
-
-        Returns:
-            True if deleted, False if not found
-        """
-        pass
 
     @abstractmethod
     async def test_connection(self) -> bool:

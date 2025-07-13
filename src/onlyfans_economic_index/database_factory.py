@@ -3,9 +3,9 @@
 import os
 from typing import Literal
 
-from .supa_database import SupabaseDatabase
 from .database_interface import DatabaseInterface
 from .sqlite_database import SQLiteDatabase
+from .supa_database import SupabaseDatabase
 
 
 def create_database(
@@ -33,7 +33,9 @@ def create_database(
     elif db_type == "supabase":
         return SupabaseDatabase()
     else:
-        raise ValueError(f"Unknown database type: {db_type}. Use 'sqlite' or 'supabase'")
+        raise ValueError(
+            f"Unknown database type: {db_type}. Use 'sqlite' or 'supabase'"
+        )
 
 
 def get_database() -> DatabaseInterface:
