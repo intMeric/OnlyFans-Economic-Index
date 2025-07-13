@@ -3,34 +3,20 @@
 import argparse
 import asyncio
 
-from .database import SupabaseDatabase
-from .onlyfans_api_service import OnlyFansAPIService
+from .browser_service import OnlyFansBrowserService
+from .supa_database import SupabaseDatabase
+from .mock_browser_service import MockOnlyFansBrowserService
 from .sqlite_database import SQLiteDatabase
 
 
 async def test_api_client() -> None:
     """Test the OnlyFans API client."""
-    client = OnlyFansAPIService()
-
-    print("Testing OnlyFans API client...")
-
-    # Test configuration retrieval
-    config = await client.get_init_config()
-    if config:
-        print("✓ Configuration retrieved successfully")
-    else:
-        print("✗ Failed to retrieve configuration")
-
-    # Test profile retrieval (will likely fail without proper auth)
-    username = "iggyazalea"
-    profile = await client.get_profile_details(username)
-    if profile:
-        print(f"✓ Profile for {username} retrieved successfully")
-    else:
-        print(f"✗ Failed to retrieve profile for {username} (expected without auth)")
+    print("API service has been removed - only browser service is used now")
 
 
-async def save_profile_snapshot(username: str, use_mock: bool = False, use_sqlite: bool = False) -> None:
+async def save_profile_snapshot(
+    username: str, use_mock: bool = False, use_sqlite: bool = False
+) -> None:
     """Save a profile snapshot to database.
     Args:
         username: OnlyFans username to save
@@ -43,18 +29,21 @@ async def save_profile_snapshot(username: str, use_mock: bool = False, use_sqlit
     else:
         database = SupabaseDatabase()
 
-    # Initialize API service
-    api_service = OnlyFansAPIService(use_browser=True, use_mock=use_mock)
+    # Initialize browser service
+    if use_mock:
+        browser_service = MockOnlyFansBrowserService(headless=True)
+    else:
+        browser_service = OnlyFansBrowserService(headless=True)
 
     try:
         # Create tables if they don't exist
         await database.create_profiles_table()
 
-        # Start browser session if needed
-        api_service.start_browser_session()
+        # Start browser session
+        browser_service.start_session()
 
         # Get profile data
-        profile_data = await api_service.get_profile_details(username)
+        profile_data = browser_service.get_profile_data(username)
 
         if profile_data:
             # Save snapshot
@@ -71,7 +60,7 @@ async def save_profile_snapshot(username: str, use_mock: bool = False, use_sqlit
     finally:
         await database.close()
         try:
-            api_service.close_browser_session()
+            browser_service.close_session()
         except Exception:
             pass
 
@@ -92,7 +81,9 @@ def load_usernames_from_file(file_path: str) -> list[str]:
         return []
 
 
-async def save_all_profiles_from_file(file_path: str, use_mock: bool = False, use_sqlite: bool = False) -> None:
+async def save_all_profiles_from_file(
+    file_path: str, use_mock: bool = False, use_sqlite: bool = False
+) -> None:
     """Save snapshots for all profiles from file.
     Args:
         file_path: Path to file containing usernames
@@ -113,15 +104,18 @@ async def save_all_profiles_from_file(file_path: str, use_mock: bool = False, us
     else:
         database = SupabaseDatabase()
 
-    # Initialize API service
-    api_service = OnlyFansAPIService(use_browser=True, use_mock=use_mock)
+    # Initialize browser service
+    if use_mock:
+        browser_service = MockOnlyFansBrowserService(headless=True)
+    else:
+        browser_service = OnlyFansBrowserService(headless=True)
 
     try:
         # Create tables if they don't exist
         await database.create_profiles_table()
 
-        # Start browser session if needed
-        api_service.start_browser_session()
+        # Start browser session
+        browser_service.start_session()
 
         # Process each username
         successful = 0
@@ -133,11 +127,13 @@ async def save_all_profiles_from_file(file_path: str, use_mock: bool = False, us
 
             try:
                 # Get profile data
-                profile_data = await api_service.get_profile_details(username)
+                profile_data = browser_service.get_profile_data(username)
 
                 if profile_data:
                     # Save snapshot
-                    was_saved = await database.insert_profile_snapshot(username, profile_data)
+                    was_saved = await database.insert_profile_snapshot(
+                        username, profile_data
+                    )
                     if was_saved:
                         print(f"  ✓ Snapshot saved for {username}")
                         successful += 1
@@ -164,7 +160,7 @@ async def save_all_profiles_from_file(file_path: str, use_mock: bool = False, us
     finally:
         await database.close()
         try:
-            api_service.close_browser_session()
+            browser_service.close_session()
         except Exception:
             pass
 
@@ -173,8 +169,14 @@ def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="OnlyFans Economic Index")
     parser.add_argument("--test", action="store_true", help="Run API test")
-    parser.add_argument("--save-profile", type=str, help="Save profile snapshot for username")
-    parser.add_argument("--save-all-from-file", type=str, help="Save snapshots for all profiles from file")
+    parser.add_argument(
+        "--save-profile", type=str, help="Save profile snapshot for username"
+    )
+    parser.add_argument(
+        "--save-all-from-file",
+        type=str,
+        help="Save snapshots for all profiles from file",
+    )
     parser.add_argument("--use-mock", action="store_true", help="Use mock data")
     parser.add_argument("--use-sqlite", action="store_true", help="Use SQLite database")
 
@@ -182,10 +184,16 @@ def main() -> None:
 
     if args.save_profile:
         print(f"Saving profile snapshot for: {args.save_profile}")
-        asyncio.run(save_profile_snapshot(args.save_profile, args.use_mock, args.use_sqlite))
+        asyncio.run(
+            save_profile_snapshot(args.save_profile, args.use_mock, args.use_sqlite)
+        )
     elif args.save_all_from_file:
         print(f"Processing all profiles from file: {args.save_all_from_file}")
-        asyncio.run(save_all_profiles_from_file(args.save_all_from_file, args.use_mock, args.use_sqlite))
+        asyncio.run(
+            save_all_profiles_from_file(
+                args.save_all_from_file, args.use_mock, args.use_sqlite
+            )
+        )
     elif args.test:
         print("OnlyFans Economic Index - API Test")
         print("=" * 40)
@@ -201,7 +209,8 @@ def main() -> None:
         print("  oei --save-all-from-file FILE        # Save all profiles from file")
         print("  oei --save-profile USERNAME --use-mock      # Use mock data")
         print("  oei --save-profile USERNAME --use-sqlite    # Use SQLite database")
-        print("  oei --save-all-from-file FILE --use-mock --use-sqlite  # Process file with mock data")
+        print("  oei --save-all-from-file FILE --use-mock --use-sqlite")
+        print("  # Process file with mock data")
 
 
 if __name__ == "__main__":

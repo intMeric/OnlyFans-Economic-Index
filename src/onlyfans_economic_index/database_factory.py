@@ -3,7 +3,7 @@
 import os
 from typing import Literal
 
-from .database import SupabaseDatabase
+from .supa_database import SupabaseDatabase
 from .database_interface import DatabaseInterface
 from .sqlite_database import SQLiteDatabase
 

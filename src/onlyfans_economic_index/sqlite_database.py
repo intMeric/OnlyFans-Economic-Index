@@ -100,7 +100,9 @@ class SQLiteDatabase(DatabaseInterface):
 
         conn.commit()
 
-    async def insert_profile_snapshot(self, username: str, profile_data: dict[str, Any]) -> bool:
+    async def insert_profile_snapshot(
+        self, username: str, profile_data: dict[str, Any]
+    ) -> bool:
         """Insert a new profile snapshot with timestamp if none exists for today.
 
         Args:

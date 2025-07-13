@@ -283,13 +283,17 @@ class OnlyFansBrowserService:
 
             while checks_done < max_checks:
                 checks_done += 1
-                print(f"🔍 Check {checks_done}/{max_checks} - Looking for API request...")
+                print(
+                    f"🔍 Check {checks_done}/{max_checks} - Looking for API request..."
+                )
 
                 # Get fresh performance logs
                 logs = self.driver.get_log('performance')
 
                 if logs:
-                    api_data = self._search_logs_for_api_response(logs, username, target_url_pattern)
+                    api_data = self._search_logs_for_api_response(
+                        logs, username, target_url_pattern
+                    )
                     if api_data:
                         return api_data
 
@@ -298,7 +302,9 @@ class OnlyFansBrowserService:
 
                 # Show progress every 5 checks
                 if checks_done % 5 == 0:
-                    print(f"⏰ Still waiting... ({checks_done * check_interval}s elapsed)")
+                    print(
+                        f"⏰ Still waiting... ({checks_done * check_interval}s elapsed)"
+                    )
 
             print(f"⏰ Timeout reached after {max_wait_time}s - No API request found")
             return None
@@ -307,7 +313,9 @@ class OnlyFansBrowserService:
             print(f"❌ Error waiting for API request: {e}")
             return None
 
-    def _search_logs_for_api_response(self, logs: list, username: str, target_pattern: str) -> dict[str, Any] | None:
+    def _search_logs_for_api_response(
+        self, logs: list, username: str, target_pattern: str
+    ) -> dict[str, Any] | None:
         """
         Search through performance logs for the target API response.
 
@@ -322,7 +330,8 @@ class OnlyFansBrowserService:
         try:
             for log in logs:
                 try:
-                    # Performance logs have nested JSON structure: {"message": {"method": ..., "params": ...}}
+                    # Performance logs have nested JSON structure:
+                    # {"message": {"method": ..., "params": ...}}
                     outer_message = json.loads(log['message'])
                     inner_message = outer_message.get('message', {})
                     method = inner_message.get('method')
@@ -341,7 +350,8 @@ class OnlyFansBrowserService:
                             if request_id:
                                 try:
                                     # Get the response body
-                                    response_body = self.driver.execute_cdp_cmd('Network.getResponseBody', {
+                                    response_body = self.driver.execute_cdp_cmd(
+                                        'Network.getResponseBody', {
                                         'requestId': request_id
                                     })
 
@@ -351,21 +361,40 @@ class OnlyFansBrowserService:
                                         # Handle base64 encoding if necessary
                                         if response_body.get('base64Encoded'):
                                             import base64
-                                            body_text = base64.b64decode(body_text).decode('utf-8')
+                                            body_text = base64.b64decode(
+                                                body_text
+                                            ).decode('utf-8')
 
                                         # Parse and validate the JSON data
                                         api_data = json.loads(body_text)
 
-                                        # Verify this is actually user data for our target
-                                        if isinstance(api_data, dict) and api_data.get('username') == username:
-                                            print(f"✅ Successfully captured API data for {username}!")
-                                            print(f"   📊 Posts: {api_data.get('postsCount', 0)}")
-                                            print(f"   📷 Photos: {api_data.get('photosCount', 0)}")
-                                            print(f"   🎥 Videos: {api_data.get('videosCount', 0)}")
-                                            print(f"   💰 Price: ${api_data.get('subscribePrice', 0)}")
+                                        # Verify this is actually user data
+                                        # for our target
+                                        if (
+                                            isinstance(api_data, dict)
+                                            and api_data.get('username') == username
+                                        ):
+                                            print(
+                                                f"✅ Successfully captured API data for "
+                                                f"{username}!"
+                                            )
+                                            print(
+                                                f"   📊 Posts: {api_data.get('postsCount', 0)}"
+                                            )
+                                            print(
+                                                f"   📷 Photos: {api_data.get('photosCount', 0)}"
+                                            )
+                                            print(
+                                                f"   🎥 Videos: {api_data.get('videosCount', 0)}"
+                                            )
+                                            print(
+                                                f"   💰 Price: ${api_data.get('subscribePrice', 0)}"
+                                            )
                                             return api_data
                                         else:
-                                            print("⚠ API response doesn't match expected user data")
+                                            print(
+                                                "⚠ API response doesn't match expected user data"
+                                            )
 
                                 except Exception as e:
                                     print(f"❌ Error processing response body: {e}")
@@ -439,8 +468,6 @@ class OnlyFansBrowserService:
             Profile data from DOM or None if failed
         """
         try:
-            wait = WebDriverWait(self.driver, 10)
-
             profile_data = {
                 'username': username,
                 'name': username,
@@ -484,7 +511,7 @@ class OnlyFansBrowserService:
                     if text and text != username:
                         profile_data['name'] = text
                         break
-                except:
+                except Exception:
                     continue
 
             # Try to find avatar with expanded selectors
@@ -506,7 +533,7 @@ class OnlyFansBrowserService:
                     if src:
                         profile_data['avatar'] = src
                         break
-                except:
+                except Exception:
                     continue
 
             # Check verification status with expanded selectors
@@ -527,7 +554,7 @@ class OnlyFansBrowserService:
                     element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     profile_data['is_verified'] = True
                     break
-                except:
+                except Exception:
                     continue
 
             # Try to find post/media counts
@@ -548,7 +575,7 @@ class OnlyFansBrowserService:
                         if text.isdigit():
                             # Could be posts, followers, etc.
                             pass
-                except:
+                except Exception:
                     continue
 
             return profile_data
