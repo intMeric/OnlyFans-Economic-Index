@@ -72,4 +72,5 @@ class MockOnlyFansBrowserService:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
+        del exc_type, exc_val, exc_tb  # Unused parameters
         self.close_session()
