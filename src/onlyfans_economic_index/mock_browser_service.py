@@ -25,7 +25,7 @@ class MockOnlyFansBrowserService:
         """Mock close session."""
         self.session_started = False
 
-    def get_profile_data(self, username: str) -> dict[str, Any] | None:
+    async def get_profile_data(self, username: str) -> dict[str, Any] | None:
         """Mock get profile data."""
         if not self.session_started:
             return None
@@ -57,7 +57,7 @@ class MockOnlyFansBrowserService:
         """Get mock tokens."""
         return self.tokens.copy()
 
-    def refresh_tokens(self) -> bool:
+    async def refresh_tokens(self) -> bool:
         """Mock refresh tokens."""
         return True
 

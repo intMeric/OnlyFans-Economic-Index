@@ -43,7 +43,7 @@ async def save_profile_snapshot(
         browser_service.start_session()
 
         # Get profile data
-        profile_data = browser_service.get_profile_data(username)
+        profile_data = await browser_service.get_profile_data(username)
 
         if profile_data:
             # Save snapshot
@@ -127,7 +127,7 @@ async def save_all_profiles_from_file(
 
             try:
                 # Get profile data
-                profile_data = browser_service.get_profile_data(username)
+                profile_data = await browser_service.get_profile_data(username)
 
                 if profile_data:
                     # Save snapshot
@@ -147,6 +147,11 @@ async def save_all_profiles_from_file(
             except Exception as e:
                 print(f"  ✗ Error processing {username}: {e}")
                 failed += 1
+
+            # Add sleep every 10 profiles to avoid overwhelming the server
+            if i % 10 == 0:
+                print(f"  💤 Waiting 5 seconds after processing {i} profiles...")
+                await asyncio.sleep(5)
 
         # Print summary
         print("\n📊 Summary:")

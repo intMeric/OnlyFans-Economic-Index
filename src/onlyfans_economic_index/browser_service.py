@@ -1,7 +1,7 @@
 """Browser service for OnlyFans data retrieval using Selenium."""
 
+import asyncio
 import json
-import time
 from typing import Any
 
 from selenium import webdriver
@@ -210,7 +210,7 @@ class OnlyFansBrowserService:
             print(f"Error navigating to profile: {e}")
             return False
 
-    def get_profile_data(self, username: str) -> dict[str, Any] | None:
+    async def get_profile_data(self, username: str) -> dict[str, Any] | None:
         """
         Get profile data by navigating to profile page and intercepting API calls.
 
@@ -222,7 +222,7 @@ class OnlyFansBrowserService:
         """
         try:
             # Set up network interception BEFORE navigation
-            api_data = self._setup_and_capture_api(username)
+            api_data = await self._setup_and_capture_api(username)
             if api_data:
                 print(f"✅ Intercepted API data for {username}")
                 return self._format_api_data(api_data, username)
@@ -235,7 +235,7 @@ class OnlyFansBrowserService:
             print(f"Error extracting profile data: {e}")
             return None
 
-    def _setup_and_capture_api(self, username: str) -> dict[str, Any] | None:
+    async def _setup_and_capture_api(self, username: str) -> dict[str, Any] | None:
         """
         Set up network interception and navigate to capture API response.
 
@@ -256,13 +256,13 @@ class OnlyFansBrowserService:
                 return None
 
             # Wait actively for the specific API request with multiple checks
-            return self._wait_for_api_request(username)
+            return await self._wait_for_api_request(username)
 
         except Exception as e:
             print(f"❌ Error in setup_and_capture_api: {e}")
             return None
 
-    def _wait_for_api_request(self, username: str) -> dict[str, Any] | None:
+    async def _wait_for_api_request(self, username: str) -> dict[str, Any] | None:
         """
         Actively wait for the specific API request to appear in logs.
 
@@ -298,7 +298,7 @@ class OnlyFansBrowserService:
                         return api_data
 
                 # Wait before next check
-                time.sleep(check_interval)
+                await asyncio.sleep(check_interval)
 
                 # Show progress every 5 checks
                 if checks_done % 5 == 0:
@@ -693,7 +693,7 @@ class OnlyFansBrowserService:
         """
         return self.tokens.copy()
 
-    def refresh_tokens(self) -> bool:
+    async def refresh_tokens(self) -> bool:
         """
         Refresh authentication tokens by navigating to OnlyFans.
 
@@ -710,7 +710,7 @@ class OnlyFansBrowserService:
             wait = WebDriverWait(self.driver, 10)
             wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
-            time.sleep(2)
+            await asyncio.sleep(2)
 
             new_tokens = self._extract_tokens_from_network()
 
