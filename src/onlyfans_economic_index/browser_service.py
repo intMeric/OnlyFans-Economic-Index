@@ -21,6 +21,8 @@ class OnlyFansBrowserService:
         """
         Initialize the browser service.
 
+
+        
         Args:
             headless: Whether to run browser in headless mode
         """
@@ -61,12 +63,24 @@ class OnlyFansBrowserService:
         options.add_argument(f"--user-agent={user_agent}")
 
         try:
-            # Try to get latest ChromeDriver
-            service = Service(ChromeDriverManager(chrome_type="chromium").install())
+            # Check if we're in a Selenium Docker container
+            import os
+            if os.path.exists("/usr/bin/chromedriver"):
+                # Use the ChromeDriver from Selenium image
+                service = Service("/usr/bin/chromedriver")
+                print("Using Selenium container ChromeDriver")
+            elif os.path.exists("/usr/local/bin/chromedriver"):
+                # Use manually installed ChromeDriver
+                service = Service("/usr/local/bin/chromedriver")
+                print("Using manually installed ChromeDriver")
+            else:
+                # Use ChromeDriverManager for local development
+                service = Service(ChromeDriverManager().install())
+                print("Using ChromeDriverManager")
         except Exception as e:
-            print(f"Error installing ChromeDriver for Chromium: {e}")
+            print(f"Error setting up Chrome service: {e}")
             try:
-                # Fallback to regular Chrome driver
+                # Final fallback to regular Chrome driver
                 service = Service(ChromeDriverManager().install())
             except Exception as e2:
                 print(f"Error installing ChromeDriver fallback: {e2}")

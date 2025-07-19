@@ -15,17 +15,18 @@ async def test_api_client() -> None:
 
 
 async def save_profile_snapshot(
-    username: str, use_mock: bool = False, use_sqlite: bool = False
+    username: str, use_mock: bool = False, use_sqlite: bool = False, db_path: str = "onlyfans_profiles.db"
 ) -> None:
     """Save a profile snapshot to database.
     Args:
         username: OnlyFans username to save
         use_mock: Whether to use mock data
         use_sqlite: Whether to use SQLite instead of Supabase
+        db_path: Path to SQLite database file
     """
     # Initialize database
     if use_sqlite:
-        database = SQLiteDatabase()
+        database = SQLiteDatabase(db_path)
     else:
         database = SupabaseDatabase()
 
@@ -82,13 +83,14 @@ def load_usernames_from_file(file_path: str) -> list[str]:
 
 
 async def save_all_profiles_from_file(
-    file_path: str, use_mock: bool = False, use_sqlite: bool = False
+    file_path: str, use_mock: bool = False, use_sqlite: bool = False, db_path: str = "onlyfans_profiles.db"
 ) -> None:
     """Save snapshots for all profiles from file.
     Args:
         file_path: Path to file containing usernames
         use_mock: Whether to use mock data
         use_sqlite: Whether to use SQLite instead of Supabase
+        db_path: Path to SQLite database file
     """
     usernames = load_usernames_from_file(file_path)
 
@@ -100,7 +102,7 @@ async def save_all_profiles_from_file(
 
     # Initialize database
     if use_sqlite:
-        database = SQLiteDatabase()
+        database = SQLiteDatabase(db_path)
     else:
         database = SupabaseDatabase()
 
@@ -184,19 +186,25 @@ def main() -> None:
     )
     parser.add_argument("--use-mock", action="store_true", help="Use mock data")
     parser.add_argument("--use-sqlite", action="store_true", help="Use SQLite database")
+    parser.add_argument(
+        "--db-path",
+        type=str,
+        default="onlyfans_profiles.db",
+        help="Path to SQLite database file (default: onlyfans_profiles.db)"
+    )
 
     args = parser.parse_args()
 
     if args.save_profile:
         print(f"Saving profile snapshot for: {args.save_profile}")
         asyncio.run(
-            save_profile_snapshot(args.save_profile, args.use_mock, args.use_sqlite)
+            save_profile_snapshot(args.save_profile, args.use_mock, args.use_sqlite, args.db_path)
         )
     elif args.save_all_from_file:
         print(f"Processing all profiles from file: {args.save_all_from_file}")
         asyncio.run(
             save_all_profiles_from_file(
-                args.save_all_from_file, args.use_mock, args.use_sqlite
+                args.save_all_from_file, args.use_mock, args.use_sqlite, args.db_path
             )
         )
     elif args.test:
@@ -214,8 +222,8 @@ def main() -> None:
         print("  oei --save-all-from-file FILE        # Save all profiles from file")
         print("  oei --save-profile USERNAME --use-mock      # Use mock data")
         print("  oei --save-profile USERNAME --use-sqlite    # Use SQLite database")
-        print("  oei --save-all-from-file FILE --use-mock --use-sqlite")
-        print("  # Process file with mock data")
+        print("  oei --save-all-from-file FILE --use-sqlite --db-path /custom/path.db")
+        print("  # Process file with SQLite and custom database path")
 
 
 if __name__ == "__main__":

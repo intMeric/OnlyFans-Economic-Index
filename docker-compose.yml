@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  onlyfans-economic-index:
+    build: .
+    container_name: oei-app
+    volumes:
+      # Mount database file
+      - ./onlyfans_profiles.db:/app/data/onlyfans_profiles.db
+      # Mount user list file
+      - ./of_user.txt:/app/config/of_user.txt
+      # Mount environment file
+      - ./.env:/app/.env
+      # Optional: Mount for persistent data
+      - oei-data:/app/data
+    environment:
+      # Override paths to point to mounted files
+      - DATABASE_PATH=/app/data/onlyfans_profiles.db
+      - USER_FILE_PATH=/app/config/of_user.txt
+
+    stdin_open: true
+    tty: true
+    command: ["--save-all-from-file", "/app/config/of_user.txt", "--use-sqlite", "--db-path", "/app/data/onlyfans_profiles.db"]
+    # If you need to expose ports
+    # ports:
+    #   - "8000:8000"
+
+volumes:
+  oei-data:
+    driver: local
