@@ -130,22 +130,3 @@ make check
 # Build package
 make build
 ```
-
-### Architecture
-
-- **Browser Service**: Selenium-based automation for data extraction
-- **Database Services**: Abstracted database layer supporting multiple backends
-- **Mock Service**: Testing utilities with sample data
-- **Async Processing**: Non-blocking operations for better performance
-
-## Background: The Stripper Index
-
-For further information on the economic theory behind this project:
-
-- [Business Review - Stripper Index](https://businessreview.studentorg.berkeley.edu/the-stripper-index-decoding-the-economic-signals-of-sex-work/)
-- [Economic Times India - Stripper Index](https://economictimes.indiatimes.com/news/international/us/real-recession-indicator-forget-the-fed-or-wall-street-an-exotic-dancer-in-austin-gives-shocking-signals-on-the-worlds-largest-economy-heres-why-you-cant-ignore/articleshow/119495998.cms?from=mdr)
-- [Yahoo Finance - Stripper Index](https://au.finance.yahoo.com/news/sex-workers-already-predicted-theres-031602161.html)
-
-## License
-
-This project is for educational and research purposes only. Please ensure compliance with OnlyFans terms of service and applicable laws in your jurisdiction.
